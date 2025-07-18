@@ -6,10 +6,6 @@ const manageSheet = await import("./sheet/sheet.js")
  * @param {ClientSheet} clientSheet 
  */
 export function initControl(clientSheet) {
-    function validateSelectior(target) {
-        
-    }
-
     function selectA1(event) {
         event.target.value = "A1"
             clientSheet.state.selection = [{
@@ -18,6 +14,9 @@ export function initControl(clientSheet) {
                 endColumn: 1,
                 endRow: 1
             }]
+            clientSheet.state.actualSelection = 0
+            clientSheet.state.selectionOffsetX = 0
+            clientSheet.state.selectionOffsetY= 0
     }
 
     function validateCellSelection(event) {
@@ -31,6 +30,9 @@ export function initControl(clientSheet) {
         } else {
             event.target.value = util.prettifySelection(parsedSelection)
             clientSheet.state.selection = parsedSelection
+            clientSheet.state.actualSelection = 0
+            clientSheet.state.selectionOffsetX = 0
+            clientSheet.state.selectionOffsetY= 0
         }
     }
 
@@ -46,49 +48,188 @@ export function initControl(clientSheet) {
     /** @type {HTMLInputElement} */
     const inputArea = clientSheet.element.getElementsByClassName("input-area")[0]
 
-
     cellSelector.addEventListener("keydown", selectorEvent)
     cellSelector.addEventListener("blur", validateCellSelection)
 
-    function writeInput(event) {
-        console.log(event)
+    function writeInput(event) { 
         const state = clientSheet.state
         if (document.activeElement != cellSelector) {
-            if (event.code != event.key && event.location == 0) { // accept basic keys
+            if (event.code != event.key && event.location == 0 && document.activeElement != inputArea) { // accept basic keys
                 inputArea.value += event.key
-            } else if ("0123456789/*-+.".includes(event.key)) { // accept numpad or others nums
+            } else if ("0123456789/*-+.".includes(event.key) && document.activeElement != inputArea) { // accept numpad or others nums
                 inputArea.value += event.key
-            } else if (event.code == "Backspace") { // acceptbackspace
+            } else if (event.code == "Backspace" && document.activeElement != inputArea) { // acceptbackspace
                 inputArea.value = inputArea.value.substring(0, inputArea.value.length - 1)
-            } else if (event.code == "ArrowLeft") {
-                if (event.shiftKey) {
-                    const thisSelection = state.selection[state.actualSelection]
-                    const endCol = thisSelection.endColumn
-                    if ((endCol != 0) && (endCol > (thisSelection.startColumn + state.selectionOffsetX))) {
-                        thisSelection.endColumn--
-                    } else if ((thisSelection.startColumn > 1) && (endCol = (thisSelection.startColumn + state.selectionOffsetX))) {
-                        thisSelection.startColumn--
-                    }
-                } else {
-                    const actualCellPos = [
+            } else if (event.code == "ArrowLeft" && document.activeElement != inputArea) {
+                const thisSelection = state.selection[state.actualSelection]
+                const actualCellPos = [
                         thisSelection.startColumn + state.selectionOffsetX,
                         thisSelection.startRow + state.selectionOffsetY
                     ]
+                if (event.shiftKey) {
+                    if ((thisSelection.endColumn != 0) && (thisSelection.endColumn > actualCellPos[0])) {
+                        thisSelection.endColumn--
+                    } else if (thisSelection.startColumn > 1) {
+                        thisSelection.startColumn--
+                        state.selectionOffsetX++
+                    }
+                } else {
                     state.selection = [{
                         startColumn: actualCellPos[0],
                         startRow: actualCellPos[1],
                         endColumn: actualCellPos[0],
                         endRow: actualCellPos[1]
                     }]
+                    state.actualSelection = 0
+                    state.selectionOffsetX = 0
+                    state.selectionOffsetY= 0
                     if (actualCellPos[0] > 1) {
                         state.selection[0].startColumn--
+                        state.selection[0].endColumn--
+                        if ((state.selection[0].startColumn <= clientSheet.sheet.columns) && (state.selection[0].startRow <= clientSheet.sheet.rows))
+                            inputArea.value = clientSheet.sheet.values[state.selection[0].startColumn - 1][state.selection[0].startRow - 1].value
+                        else
+                            inputArea.value = ""
                     }
                 }
                 cellSelector.value = util.prettifySelection(clientSheet.state.selection)
-            } else if (event.code == "ArrowUp") {
-            } else if (event.code == "ArrowDown") {
-            } else if (event.code == "ArrowRight") {
+            } else if (event.code == "ArrowUp" && document.activeElement != inputArea) {
+                const thisSelection = state.selection[state.actualSelection]
+                const actualCellPos = [
+                        thisSelection.startColumn + state.selectionOffsetX,
+                        thisSelection.startRow + state.selectionOffsetY
+                    ]
+                if (event.shiftKey) {
+                    if ((thisSelection.endRow != 0) && (thisSelection.endRow > actualCellPos[1])) {
+                        thisSelection.endRow--
+                    } else if (thisSelection.startRow > 1) {
+                        thisSelection.startRow--
+                        state.selectionOffsetY++
+                    }
+                } else {
+                    state.selection = [{
+                        startColumn: actualCellPos[0],
+                        startRow: actualCellPos[1],
+                        endColumn: actualCellPos[0],
+                        endRow: actualCellPos[1]
+                    }]
+                    state.actualSelection = 0
+                    state.selectionOffsetX = 0
+                    state.selectionOffsetY= 0
+                    if (actualCellPos[1] > 1) {
+                        state.selection[0].startRow--
+                        state.selection[0].endRow--
+                        if ((state.selection[0].startColumn <= clientSheet.sheet.columns) && (state.selection[0].startRow <= clientSheet.sheet.rows))
+                            inputArea.value = clientSheet.sheet.values[state.selection[0].startColumn - 1][state.selection[0].startRow - 1].value
+                        else
+                            inputArea.value = ""
+                    }
+                }
+                cellSelector.value = util.prettifySelection(clientSheet.state.selection)
+            } else if (event.code == "ArrowDown" && document.activeElement != inputArea) {
+                const thisSelection = state.selection[state.actualSelection]
+                const actualCellPos = [
+                        thisSelection.startColumn + state.selectionOffsetX,
+                        thisSelection.startRow + state.selectionOffsetY
+                    ]
+                if (event.shiftKey) {
+                    if (thisSelection.startRow < actualCellPos[1]) {
+                        thisSelection.startRow++
+                        state.selectionOffsetY--
+                    } else if (thisSelection.endRow != 0 && (clientSheet.sheet.infinite || (thisSelection.endRow < clientSheet.sheet.rows))) {
+                        thisSelection.endRow++
+                    }
+                } else {
+                    state.selection = [{
+                        startColumn: actualCellPos[0],
+                        startRow: actualCellPos[1],
+                        endColumn: actualCellPos[0],
+                        endRow: actualCellPos[1]
+                    }]
+                    state.actualSelection = 0
+                    state.selectionOffsetX = 0
+                    state.selectionOffsetY= 0
+                    if (clientSheet.sheet.infinite || (actualCellPos[1] < clientSheet.sheet.rows)) {
+                        state.selection[0].startRow++
+                        state.selection[0].endRow++
+                        if ((state.selection[0].startColumn <= clientSheet.sheet.columns) && (state.selection[0].startRow <= clientSheet.sheet.rows))
+                            inputArea.value = clientSheet.sheet.values[state.selection[0].startColumn - 1][state.selection[0].startRow - 1].value
+                        else
+                            inputArea.value = ""
+                    }
+                }
+                cellSelector.value = util.prettifySelection(clientSheet.state.selection)
+            } else if (event.code == "ArrowRight" && document.activeElement != inputArea) {
+                const thisSelection = state.selection[state.actualSelection]
+                const actualCellPos = [
+                        thisSelection.startColumn + state.selectionOffsetX,
+                        thisSelection.startRow + state.selectionOffsetY
+                    ]
+                if (event.shiftKey) {
+                    if (thisSelection.startColumn < actualCellPos[0]) {
+                        thisSelection.startColumn++
+                        state.selectionOffsetX--
+                    } else if (thisSelection.endColumn != 0 && (clientSheet.sheet.infinite || (thisSelection.endColumn < clientSheet.sheet.columns))) {
+                        thisSelection.endColumn++
+                    }
+                } else {
+                    state.selection = [{
+                        startColumn: actualCellPos[0],
+                        startRow: actualCellPos[1],
+                        endColumn: actualCellPos[0],
+                        endRow: actualCellPos[1]
+                    }]
+                    state.actualSelection = 0
+                    state.selectionOffsetX = 0
+                    state.selectionOffsetY= 0
+                    if (clientSheet.sheet.infinite || (actualCellPos[0] < clientSheet.sheet.columns)) {
+                        state.selection[0].startColumn++
+                        state.selection[0].endColumn++
+                        if ((state.selection[0].startColumn <= clientSheet.sheet.columns) && (state.selection[0].startRow <= clientSheet.sheet.rows))
+                            inputArea.value = clientSheet.sheet.values[state.selection[0].startColumn - 1][state.selection[0].startRow - 1].value
+                        else
+                            inputArea.value = ""
+                    }
+                }
+                cellSelector.value = util.prettifySelection(clientSheet.state.selection)
             } else if (event.code == "Enter") {
+                if (event.ctrlKey) {
+                    inputArea.focus()
+                } else if (event.altKey) {
+                    cellSelector.focus()
+                } else if (event.target != cellSelector) {
+                    const thisSelection = state.selection[state.actualSelection]
+                    const actualCellPos = [
+                        thisSelection.startColumn + state.selectionOffsetX,
+                        thisSelection.startRow + state.selectionOffsetY
+                    ]
+                    if (clientSheet.sheet.columns < actualCellPos[0])
+                        manageSheet.addColumns(clientSheet.sheet, actualCellPos[0] - clientSheet.sheet.columns)
+                    if (clientSheet.sheet.rows < actualCellPos[1])
+                        manageSheet.addRows(clientSheet.sheet, actualCellPos[1] - clientSheet.sheet.rows)
+                    clientSheet.sheet.values[actualCellPos[0]-1][actualCellPos[1]-1].value = inputArea.value
+                    
+                    state.selection = [{
+                        startColumn: actualCellPos[0],
+                        startRow: actualCellPos[1],
+                        endColumn: actualCellPos[0],
+                        endRow: actualCellPos[1]
+                    }]
+                    state.actualSelection = 0
+                    state.selectionOffsetX = 0
+                    state.selectionOffsetY= 0
+                    if (clientSheet.sheet.infinite || (actualCellPos[1] < clientSheet.sheet.rows)) {
+                        state.selection[0].startRow++
+                        state.selection[0].endRow++
+                        if ((state.selection[0].startColumn <= clientSheet.sheet.columns) && (state.selection[0].startRow <= clientSheet.sheet.rows))
+                            inputArea.value = clientSheet.sheet.values[state.selection[0].startColumn - 1][state.selection[0].startRow - 1].value
+                        else
+                            inputArea.value = ""
+                    }
+                    cellSelector.value = util.prettifySelection(clientSheet.state.selection)
+                    document.activeElement.blur()
+                }
+            } else if (event.code == "Tab") {
                 const thisSelection = state.selection[state.actualSelection]
                 const actualCellPos = [
                     thisSelection.startColumn + state.selectionOffsetX,
@@ -99,9 +240,71 @@ export function initControl(clientSheet) {
                 if (clientSheet.sheet.rows < actualCellPos[1])
                     manageSheet.addRows(clientSheet.sheet, actualCellPos[1] - clientSheet.sheet.rows)
                 clientSheet.sheet.values[actualCellPos[0]-1][actualCellPos[1]-1].value = inputArea.value
+                
+                state.selection = [{
+                    startColumn: actualCellPos[0],
+                    startRow: actualCellPos[1],
+                    endColumn: actualCellPos[0],
+                    endRow: actualCellPos[1]
+                }]
+                state.actualSelection = 0
+                state.selectionOffsetX = 0
+                state.selectionOffsetY= 0
+                if (clientSheet.sheet.infinite || (actualCellPos[0] < clientSheet.sheet.columns)) {
+                    state.selection[0].startColumn++
+                    state.selection[0].endColumn++
+                    if ((state.selection[0].startColumn <= clientSheet.sheet.columns) && (state.selection[0].startRow <= clientSheet.sheet.rows))
+                        inputArea.value = clientSheet.sheet.values[state.selection[0].startColumn - 1][state.selection[0].startRow - 1].value
+                    else
+                        inputArea.value = ""
+                }
+                cellSelector.value = util.prettifySelection(clientSheet.state.selection)
+                event.preventDefault()
+                document.activeElement.blur()
+            } else if (event.code == "Delete" && document.activeElement != inputArea) {
+                for (const selection of state.selection)
+                    for (let col = selection.startColumn; col <= (selection.endColumn == 0 ? clientSheet.sheet.columns : selection.endColumn); col++)
+                        for (let row = selection.startRow; row <= (selection.endRow == 0 ? clientSheet.sheet.rows : selection.endRow); row++)
+                            if ((col <= clientSheet.sheet.columns) && (row <= clientSheet.sheet.rows)) {
+                                clientSheet.sheet.values[col-1][row-1].value = ""
+                                clientSheet.sheet.values[col-1][row-1].function = null
+                                inputArea.value = ""
+                            }
             }
         }
     }
 
     document.addEventListener("keydown", writeInput)
+
+    function scrollEvent(event) {
+        if (event.deltaMode == 0 && document.activeElement == document.body) {
+            if (event.shiftKey) {
+                clientSheet.state.xOffset += event.deltaY
+                if (clientSheet.state.xOffset < 0)
+                    clientSheet.state.xOffset = 0
+            } else {
+                clientSheet.state.yOffset += event.deltaY
+                if (clientSheet.state.yOffset < 0)
+                    clientSheet.state.yOffset = 0
+            }
+        }
+    }
+
+    document.addEventListener("wheel", scrollEvent)
+
+    function mouseClickEvent(event) {
+        const cellPos = util.getCellAtPos(clientSheet, event.x, event.y)
+        if (cellPos != null) {
+            clientSheet.state.xStartDraggingCell = cellPos[0]
+            clientSheet.state.yStartDraggingCell = cellPos[1]
+            clientSheet.state.selection = [{
+                startColumn: (cellPos[0] == 0 ? 1 : cellPos[0]),
+                startRow: (cellPos[1] == 0 ? 1 : cellPos[1]),
+                endColumn: cellPos[0],
+                endRow: cellPos[1]
+            }]
+        }
+    }
+
+    document.addEventListener("mousedown", mouseClickEvent)
 }

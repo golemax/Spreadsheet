@@ -17,6 +17,7 @@
             xOffset: 0,
             yOffset: 0,
             menu: null,
+
             selection: [{
                 startColumn: 1,
                 startRow: 1,
@@ -26,11 +27,14 @@
             actualSelection: 0,
             selectionOffsetX: 0,
             selectionOffsetY: 0,
-            xStartDragging: 0,
-            yStartDragging: 0,
-            shift: false,
-            ctrl: false,
-            alt: false
+
+            xStartDraggingCell: 0,
+            yStartDraggingCell: 0,
+
+            firstVisibleColumn: 1,
+            firstVisibleRow: 1,
+            firstVisibleColumnOffset: 0,
+            firstVisibleRowOffset: 0
         }
 
         control.initControl(clientSheet)

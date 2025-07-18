@@ -8,6 +8,7 @@ export async function animationLoop() {
         const canvas = clientSheet.context.canvas
         const ctx = clientSheet.context
         const sheet = clientSheet.sheet
+        const state = clientSheet.state
 
         // init canvas
         canvas.width = canvas.clientWidth
@@ -23,9 +24,17 @@ export async function animationLoop() {
 
         // rows headers
         let offset = sheet.columnsHeight
-        for (let row = 1; sheet.infinite ? (offset < canvas.height) : (row <= sheet.rows); row++) {
+        ctx.save()
+        const rowHeaderClip = new Path2D()
+        rowHeaderClip.rect(0, sheet.columnsHeight, sheet.rowsWidth, canvas.height - sheet.columnsHeight)
+        ctx.clip(rowHeaderClip)
+        for (let row = 1; sheet.infinite ? ((offset - state.yOffset) < canvas.height) : (row <= sheet.rows); row++) {
             ctx.save()
-            const position = [0, offset, sheet.rowsWidth, sheet.defaultRowsHeight]
+            const position = [0, offset - state.yOffset, sheet.rowsWidth, sheet.defaultRowsHeight]
+            if ((position[1] <= sheet.columnsHeight) && ((position[1] + position[3]) > sheet.columnsHeight)) {
+                state.firstVisibleRow = row
+                state.firstVisibleRowOffset = position[1]
+            }
             ctx.fillStyle = headProp.backgroundColor
             ctx.fillRect(...position)
             ctx.strokeRect(...position)
@@ -39,17 +48,29 @@ export async function animationLoop() {
             ctx.textAlign = "center";
             ctx.rect(...position)
             ctx.clip()
-            ctx.fillText(row, sheet.rowsWidth/2, offset + sheet.defaultRowsHeight/2)
+            ctx.fillText(row, sheet.rowsWidth/2, offset + sheet.defaultRowsHeight/2 - state.yOffset)
             offset += sheet.defaultRowsHeight
             ctx.restore()
         }
+        ctx.restore()
 
         // columns headers
         offset = sheet.rowsWidth
-        for (let column = 1; sheet.infinite ? (offset < canvas.width) : (column <= sheet.columns); column++) {
+        ctx.save()
+        const columnHeaderClip = new Path2D()
+        columnHeaderClip.rect(sheet.rowsWidth, 0, canvas.width - sheet.rowsWidth, sheet.columnsHeight)
+        ctx.clip(columnHeaderClip)
+        for (let column = 1; sheet.infinite ? ((offset - state.xOffset) < canvas.width) : (column <= sheet.columns); column++) {
             ctx.save()
-            const position = [offset, 0, sheet.defaultColumnsWidth, sheet.columnsHeight]
+            const position = [offset - state.xOffset, 0, sheet.defaultColumnsWidth, sheet.columnsHeight]
+            if ((position[0] <= sheet.rowsWidth) && ((position[0] + position[2]) > sheet.rowsWidth)) {
+                state.firstVisibleColumn = column
+                state.firstVisibleColumnOffset = position[0]
+            }
             ctx.fillStyle = headProp.backgroundColor
+            const cellClip = new Path2D()
+            cellClip.rect(...position)
+            ctx.clip(cellClip)
             ctx.fillRect(...position)
             ctx.strokeRect(...position)
             ctx.font =
@@ -60,22 +81,25 @@ export async function animationLoop() {
             ctx.fillStyle = headProp.textColor
             ctx.textBaseline = "middle"
             ctx.textAlign = "center";
-            ctx.rect(...position)
-            ctx.clip()
-            ctx.fillText(util.numberToAlphabet(column), offset + sheet.defaultColumnsWidth/2, sheet.columnsHeight/2)
+            ctx.fillText(util.numberToAlphabet(column), offset + sheet.defaultColumnsWidth/2 - state.xOffset, sheet.columnsHeight/2)
             offset += sheet.defaultColumnsWidth
             ctx.restore()
         }
+        ctx.restore()
 
         // values
         const cellProp = sheet.defaultCellsProperty
         let rowOffset = sheet.columnsHeight
-        let columnOffset
-        for (let row = 0; sheet.infinite ? (rowOffset < canvas.height) : (row < sheet.rows); row++) {
+        let columnOffset = sheet.rowsWidth
+        ctx.save()
+        const gridClip = new Path2D()
+        gridClip.rect(columnOffset, rowOffset, canvas.width - sheet.rowsWidth, canvas.height - sheet.columnsHeight)
+        ctx.clip(gridClip)
+        for (let row = 0; sheet.infinite ? ((rowOffset - state.yOffset) < canvas.height) : (row < sheet.rows); row++) {
             columnOffset = sheet.rowsWidth
-            for (let column = 0; sheet.infinite ? (columnOffset < canvas.width) : (column < sheet.columns); column++) {
+            for (let column = 0; sheet.infinite ? ((columnOffset - state.xOffset) - state.xOffset < canvas.width) : (column < sheet.columns); column++) {
                 ctx.save()
-                const position = [columnOffset, rowOffset, sheet.defaultColumnsWidth, sheet.defaultRowsHeight]
+                const position = [columnOffset - state.xOffset, rowOffset - state.yOffset, sheet.defaultColumnsWidth, sheet.defaultRowsHeight]
                 ctx.fillStyle = cellProp.backgroundColor
                 ctx.fillRect(...position)
                 ctx.lineWidth = 0.1
@@ -88,8 +112,9 @@ export async function animationLoop() {
                 ctx.fillStyle = cellProp.textColor
                 ctx.textBaseline = "middle"
                 ctx.textAlign = "center";
-                ctx.rect(...position)
-                ctx.clip()
+                const cellClip = new Path2D()
+                cellClip.rect(...position)
+                ctx.clip(cellClip)
                 ctx.fillText(sheet.values[column]?.[row]?.value ?? "", columnOffset + sheet.defaultColumnsWidth/2, rowOffset + sheet.defaultRowsHeight/2)
                 columnOffset += sheet.defaultColumnsWidth
                 ctx.restore()
@@ -121,12 +146,13 @@ export async function animationLoop() {
                 for (let column = range.startColumn; column <= range.endColumn; column++)
                     endColumnOffset += sheet.defaultColumnsWidth
             
-            const position = [columnOffset, rowOffset, endColumnOffset, endRowOffset]
+            const position = [columnOffset - state.xOffset, rowOffset - state.yOffset, endColumnOffset, endRowOffset]
             ctx.globalAlpha = 0.25
             ctx.fillRect(...position)
             ctx.globalAlpha = 1
             ctx.strokeRect(...position)
         }
+        ctx.restore()
         ctx.restore()
     }
     requestAnimationFrame(animationLoop)

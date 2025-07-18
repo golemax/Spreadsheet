@@ -97,4 +97,5 @@ export function addColumns(sheet, num) {
         }
         sheet.values.push(column)
     }
+    sheet.columns += num
 }

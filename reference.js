@@ -98,20 +98,24 @@
  */
 
 /**
- * Client state
+ * Client drawing's state
  * @typedef {Object} ClientState
  * @property {Number} xOffset - Offset on X axe on the grid
  * @property {Number} yOffset - Offset on Y axe on the grid
  * @property {ClientMenu} menu - Menu, or null
+ * 
  * @property {SheetRange[]} selection - Cells selection
  * @property {Number} actualSelection - Which selection is currently selected
  * @property {Number} selectionOffsetX - X offset in selection
  * @property {Number} selectionOffsetY - Y offset in selection
- * @property {Number} xStartDragging - X pos when mouse started to drag
- * @property {Number} yStartDragging - Y pos when mouse started to drag
- * @property {boolean} shift - Touch SHIFT pressed
- * @property {boolean} ctrl - Touch CTRL pressed
- * @property {boolean} alt - Touch ALT pressed
+ * 
+ * @property {Number} xStartDraggingCell - X cell when mouse started to drag (null for unused, 0 for header)
+ * @property {Number} yStartDraggingCell - Y cell when mouse started to drag (null for unused, 0 for header)
+ * 
+ * @property {Number} firstVisibleColumn - first visible column in viewport (1 based)
+ * @property {Number} firstVisibleRow - first visible row in viewport (1 based)
+ * @property {Number} firstVisibleColumnOffset - pixels between start of first visible column and his visible part
+ * @property {Number} firstVisibleRowOffset - pixels between start of first visible row and his visible part
  */
 
 /**
