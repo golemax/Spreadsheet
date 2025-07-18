@@ -88,12 +88,19 @@ export async function animationLoop() {
         ctx.restore()
 
         // values
-        const cellProp = sheet.defaultCellsProperty
         let rowOffset = sheet.columnsHeight
         let columnOffset = sheet.rowsWidth
+        const cellProp = sheet.defaultCellsProperty
+        const actualSelection = clientSheet.state.selection[clientSheet.state.actualSelection]
+        const actualSelectionX = actualSelection.startColumn + clientSheet.state.selectionOffsetX - 1
+        const actualSelectionY = actualSelection.startRow + clientSheet.state.selectionOffsetY - 1
         ctx.save()
         const gridClip = new Path2D()
-        gridClip.rect(columnOffset, rowOffset, canvas.width - sheet.rowsWidth, canvas.height - sheet.columnsHeight)
+        gridClip.rect(
+            columnOffset,
+            rowOffset,
+            canvas.width - sheet.rowsWidth,
+            canvas.height - sheet.columnsHeight)
         ctx.clip(gridClip)
         for (let row = 0; sheet.infinite ? ((rowOffset - state.yOffset) < canvas.height) : (row < sheet.rows); row++) {
             columnOffset = sheet.rowsWidth
@@ -116,6 +123,10 @@ export async function animationLoop() {
                 cellClip.rect(...position)
                 ctx.clip(cellClip)
                 ctx.fillText(sheet.values[column]?.[row]?.value ?? "", columnOffset + sheet.defaultColumnsWidth/2, rowOffset + sheet.defaultRowsHeight/2)
+                if (column == actualSelectionX && row == actualSelectionY) {
+                    ctx.lineWidth = 2.25
+                    ctx.strokeRect(...position)
+                }
                 columnOffset += sheet.defaultColumnsWidth
                 ctx.restore()
             }

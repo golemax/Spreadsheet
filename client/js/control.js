@@ -292,19 +292,101 @@ export function initControl(clientSheet) {
 
     document.addEventListener("wheel", scrollEvent)
 
+    function completeSelection(xCell, yCell) {
+        const state = clientSheet.state
+        const actualSelection = state.selection[state.actualSelection]
+        
+        let startColumn
+        let endColumn
+        let startRow
+        let endRow
+
+        if (state.xStartDraggingCell == 0 && xCell == 0) {
+            startColumn = 1
+            endColumn = 0
+        } else if (state.xStartDraggingCell == 0) {
+            startColumn = xCell
+            endColumn = 0
+        } else if (xCell == 0) {
+            startColumn = state.xStartDraggingCell
+            endColumn = 0
+        } else {
+            startColumn = Math.min(xCell, state.xStartDraggingCell)
+            endColumn = Math.max(xCell, state.xStartDraggingCell)
+        }
+
+        if (state.yStartDraggingCell == 0 && yCell == 0) {
+            startRow = 1
+            endRow = 0
+        } else if (state.yStartDraggingCell == 0) {
+            startRow = yCell
+            endRow = 0
+        } else if (yCell == 0) {
+            startRow = state.yStartDraggingCell
+            endRow = 0
+        } else {
+            startRow = Math.min(yCell, state.yStartDraggingCell)
+            endRow = Math.max(yCell, state.yStartDraggingCell)
+        }
+
+        state.selection[state.actualSelection] = {
+            startColumn: startColumn,
+            endColumn: endColumn,
+            startRow: startRow,
+            endRow: endRow
+        }
+        state.selectionOffsetX = 0
+        state.selectionOffsetY = 0
+        cellSelector.value = util.prettifySelection(clientSheet.state.selection)
+    }
+
     function mouseClickEvent(event) {
         const cellPos = util.getCellAtPos(clientSheet, event.x, event.y)
         if (cellPos != null) {
-            clientSheet.state.xStartDraggingCell = cellPos[0]
-            clientSheet.state.yStartDraggingCell = cellPos[1]
-            clientSheet.state.selection = [{
-                startColumn: (cellPos[0] == 0 ? 1 : cellPos[0]),
-                startRow: (cellPos[1] == 0 ? 1 : cellPos[1]),
-                endColumn: cellPos[0],
-                endRow: cellPos[1]
-            }]
+            if (event.shiftKey) {
+                completeSelection(cellPos[0], cellPos[1])
+            } else {
+                clientSheet.state.xStartDraggingCell = cellPos[0]
+                clientSheet.state.yStartDraggingCell = cellPos[1]
+                if (event.ctrlKey) {
+                    clientSheet.state.selection.push({
+                        startColumn: (cellPos[0] == 0 ? 1 : cellPos[0]),
+                        startRow: (cellPos[1] == 0 ? 1 : cellPos[1]),
+                        endColumn: cellPos[0],
+                        endRow: cellPos[1]
+                    })
+                    clientSheet.state.actualSelection =
+                        clientSheet.state.selection.length - 1
+                    clientSheet.state.selectionOffsetX = 0
+                    clientSheet.state.selectionOffsetY= 0
+                } else {
+                    clientSheet.state.selection = [{
+                        startColumn: (cellPos[0] == 0 ? 1 : cellPos[0]),
+                        startRow: (cellPos[1] == 0 ? 1 : cellPos[1]),
+                        endColumn: cellPos[0],
+                        endRow: cellPos[1]
+                    }]
+                    clientSheet.state.actualSelection = 0
+                    clientSheet.state.selectionOffsetX = 0
+                    clientSheet.state.selectionOffsetY= 0
+                }
+                cellSelector.value = util.prettifySelection(clientSheet.state.selection)
+            }
         }
     }
 
+    function mouseReleaseEvent(event) {
+        const cellPos = util.getCellAtPos(clientSheet, event.x, event.y)
+        if (cellPos != null)
+            completeSelection(cellPos[0], cellPos[1])
+    }
+
+    function mouseMoveEvent(event) {
+        if (event.buttons & 1) // left click
+            mouseReleaseEvent(event)
+    }
+
     document.addEventListener("mousedown", mouseClickEvent)
+    document.addEventListener("mouseup", mouseReleaseEvent)
+    document.addEventListener("mousemove", mouseMoveEvent)
 }
