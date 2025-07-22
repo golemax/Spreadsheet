@@ -28,8 +28,8 @@
             selectionOffsetX: 0,
             selectionOffsetY: 0,
 
-            xStartDraggingCell: 0,
-            yStartDraggingCell: 0,
+            xStartDraggingCell: null,
+            yStartDraggingCell: null,
 
             firstVisibleColumn: 1,
             firstVisibleRow: 1,

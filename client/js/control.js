@@ -341,52 +341,63 @@ export function initControl(clientSheet) {
     }
 
     function mouseClickEvent(event) {
-        const cellPos = util.getCellAtPos(clientSheet, event.x, event.y)
-        if (cellPos != null) {
-            if (event.shiftKey) {
-                completeSelection(cellPos[0], cellPos[1])
-            } else {
-                clientSheet.state.xStartDraggingCell = cellPos[0]
-                clientSheet.state.yStartDraggingCell = cellPos[1]
-                if (event.ctrlKey) {
-                    clientSheet.state.selection.push({
-                        startColumn: (cellPos[0] == 0 ? 1 : cellPos[0]),
-                        startRow: (cellPos[1] == 0 ? 1 : cellPos[1]),
-                        endColumn: cellPos[0],
-                        endRow: cellPos[1]
-                    })
-                    clientSheet.state.actualSelection =
-                        clientSheet.state.selection.length - 1
-                    clientSheet.state.selectionOffsetX = 0
-                    clientSheet.state.selectionOffsetY= 0
+        if (event.button == 0 || event.button == 2) {
+            const cellPos = util.getCellAtPos(clientSheet, event.x, event.y)
+            if (cellPos != null) {
+                if (event.shiftKey) {
+                    completeSelection(cellPos[0], cellPos[1])
                 } else {
-                    clientSheet.state.selection = [{
-                        startColumn: (cellPos[0] == 0 ? 1 : cellPos[0]),
-                        startRow: (cellPos[1] == 0 ? 1 : cellPos[1]),
-                        endColumn: cellPos[0],
-                        endRow: cellPos[1]
-                    }]
-                    clientSheet.state.actualSelection = 0
-                    clientSheet.state.selectionOffsetX = 0
-                    clientSheet.state.selectionOffsetY= 0
+                    clientSheet.state.xStartDraggingCell = cellPos[0]
+                    clientSheet.state.yStartDraggingCell = cellPos[1]
+                    if (event.ctrlKey) {
+                        clientSheet.state.selection.push({
+                            startColumn: (cellPos[0] == 0 ? 1 : cellPos[0]),
+                            startRow: (cellPos[1] == 0 ? 1 : cellPos[1]),
+                            endColumn: cellPos[0],
+                            endRow: cellPos[1]
+                        })
+                        clientSheet.state.actualSelection =
+                            clientSheet.state.selection.length - 1
+                        clientSheet.state.selectionOffsetX = 0
+                        clientSheet.state.selectionOffsetY= 0
+                    } else {
+                        clientSheet.state.selection = [{
+                            startColumn: (cellPos[0] == 0 ? 1 : cellPos[0]),
+                            startRow: (cellPos[1] == 0 ? 1 : cellPos[1]),
+                            endColumn: cellPos[0],
+                            endRow: cellPos[1]
+                        }]
+                        clientSheet.state.actualSelection = 0
+                        clientSheet.state.selectionOffsetX = 0
+                        clientSheet.state.selectionOffsetY= 0
+                    }
+                    cellSelector.value = util.prettifySelection(clientSheet.state.selection)
                 }
-                cellSelector.value = util.prettifySelection(clientSheet.state.selection)
             }
         }
     }
 
-    function mouseReleaseEvent(event) {
+    function updateSelectionFromMouseEvent() {
         const cellPos = util.getCellAtPos(clientSheet, event.x, event.y)
         if (cellPos != null)
             completeSelection(cellPos[0], cellPos[1])
     }
 
+    function mouseReleaseEvent(event) {
+        if (event.button == 0 || event.button == 2)
+            updateSelectionFromMouseEvent()
+        if (event.button == 2) {
+            event.preventDefault()
+        }
+    }
+
     function mouseMoveEvent(event) {
-        if (event.buttons & 1) // left click
-            mouseReleaseEvent(event)
+        if (event.buttons & 1 || event.buttons & 2)
+            updateSelectionFromMouseEvent(event)
     }
 
     document.addEventListener("mousedown", mouseClickEvent)
     document.addEventListener("mouseup", mouseReleaseEvent)
     document.addEventListener("mousemove", mouseMoveEvent)
+    document.addEventListener("contextmenu", event => {event.preventDefault()});
 }

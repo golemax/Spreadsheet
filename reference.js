@@ -87,14 +87,19 @@
  * @property {ClientMenu} submenu - Submenu on click, or null
  */
 
-/**
- * Menu
- * @typedef {Object} ClientMenu
- * @property {ClientMenuItem[]} - content of menu
+/** Zone on screen
+ * @typedef {Object} Zone
  * @property {Number} x - x position on screen
  * @property {Number} y - y position on screen
  * @property {Number} width - width on screen
  * @property {Number} height - height on screen
+ */
+
+/**
+ * Menu
+ * @typedef {Object} ClientMenu
+ * @property {ClientMenuItem[]} - content of menu
+ * @property {Zone} zone - zone on screen
  */
 
 /**
