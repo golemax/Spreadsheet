@@ -190,11 +190,26 @@ export function getCellAtPos(clientSheet, x, y) {
             }
 
             if (mousePosX <= sheet.rowsWidth) {
-                return [0, getRow()]
+                const row = getRow()
+                if(row > clientSheet.sheet.rows && !clientSheet.sheet.infinite)
+                    return [1, clientSheet.sheet.rows]
+                else
+                    return [0, row]
             } else if (mousePosY <= sheet.columnsHeight) {
-                return [getColumn(), 0]
+                const col = getColumn()
+                if(col > clientSheet.sheet.columns && !clientSheet.sheet.infinite)
+                    return [clientSheet.sheet.columns, 1]
+                else
+                    return [col, 0]
             } else {
-                return [getColumn(), getRow()]
+                const col = getColumn()
+                const row = getRow()
+                if(clientSheet.sheet.infinite) {
+                    return [col, row]
+                } else {
+                    return [Math.min(getColumn(), clientSheet.sheet.columns),
+                            Math.min(getRow(), clientSheet.sheet.rows)]
+                }
             }
         }
     }

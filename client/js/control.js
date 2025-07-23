@@ -48,6 +48,26 @@ export function initControl(clientSheet) {
     /** @type {HTMLInputElement} */
     const inputArea = clientSheet.element.getElementsByClassName("input-area")[0]
 
+    function updateInputs() {
+        const state = clientSheet.state
+        const sheet = clientSheet.sheet
+        const thisSelection = state.selection[state.actualSelection]
+        const actualCellPos = [
+            thisSelection.startColumn + state.selectionOffsetX,
+            thisSelection.startRow + state.selectionOffsetY
+        ]
+
+        if ((actualCellPos[0] <= sheet.columns) &&
+            (actualCellPos[1]    <= sheet.rows))
+            inputArea.value = sheet.values
+                [actualCellPos[0] - 1]
+                [actualCellPos[1] - 1].value
+        else
+            inputArea.value = ""
+        
+        cellSelector.value = util.prettifySelection(clientSheet.state.selection)
+    }
+
     cellSelector.addEventListener("keydown", selectorEvent)
     cellSelector.addEventListener("blur", validateCellSelection)
 
@@ -72,6 +92,10 @@ export function initControl(clientSheet) {
                     } else if (thisSelection.startColumn > 1) {
                         thisSelection.startColumn--
                         state.selectionOffsetX++
+                    } else if (actualCellPos[0] == 1 && thisSelection.endColumn == 0) {
+                        thisSelection.endColumn = 1
+                    } else if (actualCellPos[0] == 1 && thisSelection.endColumn == 1) {
+                        thisSelection.endColumn = 0
                     }
                 } else {
                     state.selection = [{
@@ -86,13 +110,9 @@ export function initControl(clientSheet) {
                     if (actualCellPos[0] > 1) {
                         state.selection[0].startColumn--
                         state.selection[0].endColumn--
-                        if ((state.selection[0].startColumn <= clientSheet.sheet.columns) && (state.selection[0].startRow <= clientSheet.sheet.rows))
-                            inputArea.value = clientSheet.sheet.values[state.selection[0].startColumn - 1][state.selection[0].startRow - 1].value
-                        else
-                            inputArea.value = ""
                     }
                 }
-                cellSelector.value = util.prettifySelection(clientSheet.state.selection)
+                updateInputs()
             } else if (event.code == "ArrowUp" && document.activeElement != inputArea) {
                 const thisSelection = state.selection[state.actualSelection]
                 const actualCellPos = [
@@ -105,6 +125,10 @@ export function initControl(clientSheet) {
                     } else if (thisSelection.startRow > 1) {
                         thisSelection.startRow--
                         state.selectionOffsetY++
+                    } else if (actualCellPos[1] == 1 && thisSelection.endRow == 0) {
+                        thisSelection.endRow = 1
+                    } else if (actualCellPos[1] == 1 && thisSelection.endRow == 1) {
+                        thisSelection.endRow = 0
                     }
                 } else {
                     state.selection = [{
@@ -119,13 +143,9 @@ export function initControl(clientSheet) {
                     if (actualCellPos[1] > 1) {
                         state.selection[0].startRow--
                         state.selection[0].endRow--
-                        if ((state.selection[0].startColumn <= clientSheet.sheet.columns) && (state.selection[0].startRow <= clientSheet.sheet.rows))
-                            inputArea.value = clientSheet.sheet.values[state.selection[0].startColumn - 1][state.selection[0].startRow - 1].value
-                        else
-                            inputArea.value = ""
-                    }
+                    } 
                 }
-                cellSelector.value = util.prettifySelection(clientSheet.state.selection)
+                updateInputs()
             } else if (event.code == "ArrowDown" && document.activeElement != inputArea) {
                 const thisSelection = state.selection[state.actualSelection]
                 const actualCellPos = [
@@ -152,13 +172,9 @@ export function initControl(clientSheet) {
                     if (clientSheet.sheet.infinite || (actualCellPos[1] < clientSheet.sheet.rows)) {
                         state.selection[0].startRow++
                         state.selection[0].endRow++
-                        if ((state.selection[0].startColumn <= clientSheet.sheet.columns) && (state.selection[0].startRow <= clientSheet.sheet.rows))
-                            inputArea.value = clientSheet.sheet.values[state.selection[0].startColumn - 1][state.selection[0].startRow - 1].value
-                        else
-                            inputArea.value = ""
                     }
                 }
-                cellSelector.value = util.prettifySelection(clientSheet.state.selection)
+                updateInputs()
             } else if (event.code == "ArrowRight" && document.activeElement != inputArea) {
                 const thisSelection = state.selection[state.actualSelection]
                 const actualCellPos = [
@@ -185,13 +201,9 @@ export function initControl(clientSheet) {
                     if (clientSheet.sheet.infinite || (actualCellPos[0] < clientSheet.sheet.columns)) {
                         state.selection[0].startColumn++
                         state.selection[0].endColumn++
-                        if ((state.selection[0].startColumn <= clientSheet.sheet.columns) && (state.selection[0].startRow <= clientSheet.sheet.rows))
-                            inputArea.value = clientSheet.sheet.values[state.selection[0].startColumn - 1][state.selection[0].startRow - 1].value
-                        else
-                            inputArea.value = ""
                     }
                 }
-                cellSelector.value = util.prettifySelection(clientSheet.state.selection)
+                updateInputs()
             } else if (event.code == "Enter") {
                 if (event.ctrlKey) {
                     inputArea.focus()
@@ -221,12 +233,8 @@ export function initControl(clientSheet) {
                     if (clientSheet.sheet.infinite || (actualCellPos[1] < clientSheet.sheet.rows)) {
                         state.selection[0].startRow++
                         state.selection[0].endRow++
-                        if ((state.selection[0].startColumn <= clientSheet.sheet.columns) && (state.selection[0].startRow <= clientSheet.sheet.rows))
-                            inputArea.value = clientSheet.sheet.values[state.selection[0].startColumn - 1][state.selection[0].startRow - 1].value
-                        else
-                            inputArea.value = ""
                     }
-                    cellSelector.value = util.prettifySelection(clientSheet.state.selection)
+                    updateInputs()
                     document.activeElement.blur()
                 }
             } else if (event.code == "Tab") {
@@ -253,12 +261,8 @@ export function initControl(clientSheet) {
                 if (clientSheet.sheet.infinite || (actualCellPos[0] < clientSheet.sheet.columns)) {
                     state.selection[0].startColumn++
                     state.selection[0].endColumn++
-                    if ((state.selection[0].startColumn <= clientSheet.sheet.columns) && (state.selection[0].startRow <= clientSheet.sheet.rows))
-                        inputArea.value = clientSheet.sheet.values[state.selection[0].startColumn - 1][state.selection[0].startRow - 1].value
-                    else
-                        inputArea.value = ""
                 }
-                cellSelector.value = util.prettifySelection(clientSheet.state.selection)
+                updateInputs()
                 event.preventDefault()
                 document.activeElement.blur()
             } else if (event.code == "Delete" && document.activeElement != inputArea) {
@@ -268,7 +272,7 @@ export function initControl(clientSheet) {
                             if ((col <= clientSheet.sheet.columns) && (row <= clientSheet.sheet.rows)) {
                                 clientSheet.sheet.values[col-1][row-1].value = ""
                                 clientSheet.sheet.values[col-1][row-1].function = null
-                                inputArea.value = ""
+                                updateInputs()
                             }
             }
         }
@@ -301,6 +305,7 @@ export function initControl(clientSheet) {
         let startRow
         let endRow
 
+        state.selectionOffsetX = 0
         if (state.xStartDraggingCell == 0 && xCell == 0) {
             startColumn = 1
             endColumn = 0
@@ -313,8 +318,11 @@ export function initControl(clientSheet) {
         } else {
             startColumn = Math.min(xCell, state.xStartDraggingCell)
             endColumn = Math.max(xCell, state.xStartDraggingCell)
+            if (state.xStartDraggingCell > xCell)
+                state.selectionOffsetX = endColumn - startColumn
         }
 
+        state.selectionOffsetY = 0
         if (state.yStartDraggingCell == 0 && yCell == 0) {
             startRow = 1
             endRow = 0
@@ -327,6 +335,8 @@ export function initControl(clientSheet) {
         } else {
             startRow = Math.min(yCell, state.yStartDraggingCell)
             endRow = Math.max(yCell, state.yStartDraggingCell)
+            if (state.yStartDraggingCell > yCell)
+                state.selectionOffsetY = endRow - startRow
         }
 
         state.selection[state.actualSelection] = {
@@ -335,9 +345,7 @@ export function initControl(clientSheet) {
             startRow: startRow,
             endRow: endRow
         }
-        state.selectionOffsetX = 0
-        state.selectionOffsetY = 0
-        cellSelector.value = util.prettifySelection(clientSheet.state.selection)
+        updateInputs()
     }
 
     function mouseClickEvent(event) {
@@ -371,7 +379,7 @@ export function initControl(clientSheet) {
                         clientSheet.state.selectionOffsetX = 0
                         clientSheet.state.selectionOffsetY= 0
                     }
-                    cellSelector.value = util.prettifySelection(clientSheet.state.selection)
+                    updateInputs()
                 }
             }
         }

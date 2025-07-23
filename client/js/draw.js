@@ -145,14 +145,20 @@ export async function animationLoop() {
             for (let column = 1; column < range.startColumn; column++)
                 columnOffset += sheet.defaultColumnsWidth
             let endRowOffset = 0
-            if (range.endRow == 0)
+            if (range.endRow == 0 && sheet.infinite)
                 endRowOffset = (canvas.height - rowOffset)
+            else if (range.endRow == 0)
+                for (let row = range.startRow; row <= sheet.rows; row++)
+                    endRowOffset += sheet.defaultRowsHeight
             else
                 for (let row = range.startRow; row <= range.endRow; row++)
                     endRowOffset += sheet.defaultRowsHeight
             let endColumnOffset = 0
-            if (range.endColumn == 0)
+            if (range.endColumn == 0 && sheet.infinite)
                 endColumnOffset = (canvas.width - columnOffset)
+            else if (range.endColumn == 0)
+                for (let column = range.startColumn; column <= sheet.columns; column++)
+                    endColumnOffset += sheet.defaultColumnsWidth
             else
                 for (let column = range.startColumn; column <= range.endColumn; column++)
                     endColumnOffset += sheet.defaultColumnsWidth

@@ -2,7 +2,7 @@
  * Create a new empty cell
  * @returns {Cell}
  */
-function newCell() {
+export function newCell() {
     return {
         value: "",
         function: "",
@@ -14,7 +14,7 @@ function newCell() {
  * Create a new cell property object for cells
  * @returns {CellProperty}
  */
-function newCellsProperty() {
+export function newCellsProperty() {
     return {
         font: "sans-serif",
         fontSize: 12,
@@ -29,7 +29,7 @@ function newCellsProperty() {
  * Create a new cell property object for headers
  * @returns {CellProperty}
  */
-function newHeadersProperty() {
+export function newHeadersProperty() {
     return {
         font: "sans-serif",
         fontSize: 12,
