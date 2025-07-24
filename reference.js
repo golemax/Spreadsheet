@@ -1,6 +1,26 @@
 /**
+ * Parsing error for function
+ * @typedef {Object} FunctionParseError
+ * @property {String} type - normalized error name
+ * @property {String} comment - user friendly error name
+ * @property {Number} startChar - where the error start
+ * @property {Number} endChar - where the error end
+ */
+
+/**
+ * Function expression
+ * @typedef {Object} FunctionExpression
+ * @property {String} type - type of value
+ * @property {*} value - content value, depend of type
+ * @property {Number} fromChar - where the expression start, useful for debugging
+ * @property {Number} toChar - where the expression end, useful for debugging
+ */
+
+/**
  * Function representation
  * @typedef {Object} SheetFunction
+ * @property {boolean} error - is an error
+ * @property {(FunctionExpression|FunctionParseError)} def - parsed expression or error details
  */
 
 /**
@@ -105,18 +125,23 @@
 /**
  * Client drawing's state
  * @typedef {Object} ClientState
+ * 
+ * mouse
  * @property {Number} xOffset - Offset on X axe on the grid
  * @property {Number} yOffset - Offset on Y axe on the grid
  * @property {ClientMenu} menu - Menu, or null
  * 
+ * selection
  * @property {SheetRange[]} selection - Cells selection
  * @property {Number} actualSelection - Which selection is currently selected
  * @property {Number} selectionOffsetX - X offset in selection
  * @property {Number} selectionOffsetY - Y offset in selection
  * 
+ * permit to select headers
  * @property {Number} xStartDraggingCell - X cell when mouse started to drag (null for unused, 0 for header)
  * @property {Number} yStartDraggingCell - Y cell when mouse started to drag (null for unused, 0 for header)
  * 
+ * optimisation for selection computing
  * @property {Number} firstVisibleColumn - first visible column in viewport (1 based)
  * @property {Number} firstVisibleRow - first visible row in viewport (1 based)
  * @property {Number} firstVisibleColumnOffset - pixels between start of first visible column and his visible part
