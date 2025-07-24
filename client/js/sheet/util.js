@@ -1,4 +1,4 @@
-const sheetDefault = (await import("./default.js"))
+const sheetDefault = await import("./default.js")
 
 /**
  * Create new rows

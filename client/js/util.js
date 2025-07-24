@@ -1,4 +1,4 @@
-const sheet = await import("./sheet/sheet.js")
+const sheet = await import("./sheet/default.js")
 
 export function fillCellMatrix(columns, rows) {
     const values = []

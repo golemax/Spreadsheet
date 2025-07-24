@@ -50,7 +50,7 @@ export function applyBrackets(root, element, errorHandler, path) {
                 hadBracket = true
                 if (tmpValue !== "")
                     pushWaiting(root, tmpValue, "raw", startText, index-1)
-                pushWaiting(root, "(", openBracketName, index, index)
+                pushWaiting(root, char, openBracketName, index, index)
                 tmpValue = ""
                 startText = index+1
                 bracketsRegister.push(bracketName)
@@ -77,6 +77,7 @@ export function applyBrackets(root, element, errorHandler, path) {
                     while (backwardElement != undefined) {
                         if (backwardElement.type == openBracketName) {
                             pushWaiting(root, internalRoot, bracketName, backwardElement.fromChar, index)
+                            bracketsRegister.pop()
                             break
                         } else {
                             internalRoot.unshift(backwardElement)

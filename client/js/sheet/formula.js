@@ -1,5 +1,8 @@
 import { applyString } from "./formula/string.js"
 import { applyBrackets } from "./formula/brackets.js"
+import { applyOperatorSplit } from "./formula/operatorSplit.js"
+import { applyA1 } from "./formula/A1.js"
+import { applyNumber } from "./formula/number.js"
 
 /**
  * Parse a function
@@ -14,9 +17,9 @@ export function functionParse(code) {
         toChar: code.length - 1
     }]
     const containers = [
-        ["round bracket"],
-        ["square bracket"],
-        ["curly bracket"]
+        "round bracket",
+        "square bracket",
+        "curly bracket"
     ]
 
     let error = null
@@ -31,6 +34,18 @@ export function functionParse(code) {
         tree = mapToken(tree, containers, applyBrackets, errorHandler)
         if (error) break exitParsing
 
+        // parse brackets
+        tree = mapToken(tree, containers, applyOperatorSplit, errorHandler)
+        if (error) break exitParsing
+
+        // parse A1 reference
+        tree = mapToken(tree, containers, applyA1, errorHandler)
+        if (error) break exitParsing
+
+        // parse number
+        tree = mapToken(tree, containers, applyNumber, errorHandler)
+        if (error) break exitParsing
+
         // TODO: next parsers to add
     }
 
@@ -43,7 +58,7 @@ export function functionParse(code) {
 // Get giver element of array recursivity from list of index
 function setActualFromIndexList(root, numList) {
     let actual = root
-    for (let index = 0; i < numList.length - 1; i++) {
+    for (let index = 0; index < numList.length - 1; index++) {
         const num = numList[index]
         actual = actual[num].value
     }
@@ -53,7 +68,7 @@ function setActualFromIndexList(root, numList) {
 // Get last element of array recursivity
 function setActualFromDepth(root, depth) {
     let actual = root
-    for (let index = 0; i < depth; i++) {
+    for (let index = 0; index < depth; index++) {
         actual = actual[actual.length - 1].value
     }
     return actual
@@ -138,5 +153,5 @@ function mapToken(root, containers, func, errorHandler, finaliser) {
 
 console.log(
 functionParse(
-`POW(1+4 & "test" &A1)`
+`POW({1+4 & "test" &A1}[])`
 ))
