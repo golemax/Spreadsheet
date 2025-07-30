@@ -12,7 +12,11 @@ async function getIP() {
     try {
         ret = await (await fetch("https://ifconfig.me/ip")).text()
     } catch (e) {
-        console.log("Unable to get IP from ifconfig.me")
+        try {
+            ret = await (await fetch("http://ifconfig.me/ip")).text()
+        } catch (e) {
+            console.log("Unable to get IP from ifconfig.me")
+        }
     }
     return ret
 }
