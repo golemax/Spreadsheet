@@ -1,4 +1,4 @@
-const util = await import("../../util.js")
+const util = await import("../util.js")
 
 const regexVerifier = /^[A-Za-z]+[1-9][0-9]*$/
 

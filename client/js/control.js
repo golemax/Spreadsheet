@@ -1,5 +1,5 @@
-const util = await import("./util.js")
-const manageSheet = await import("./sheet/sheet.js")
+const util = await import("./common/util.js")
+const manageSheet = await import("./common/sheetUtil.js")
 
 /**
  * Init DOM listeners

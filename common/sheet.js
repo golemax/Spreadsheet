@@ -5,7 +5,8 @@
 export function newCell() {
     return {
         value: "",
-        function: "",
+        function: null,
+        visibleValue: "",
         property: null
     }
 }

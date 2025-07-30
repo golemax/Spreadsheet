@@ -1,0 +1,14 @@
+{
+  "name": "site-spreadsheet",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "run": "node server/server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}

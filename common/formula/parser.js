@@ -1,8 +1,13 @@
-import { applyString } from "./formula/string.js"
-import { applyBrackets } from "./formula/brackets.js"
-import { applyOperatorSplit } from "./formula/operatorSplit.js"
-import { applyA1 } from "./formula/A1.js"
-import { applyNumber } from "./formula/number.js"
+import { applyString        } from "./string.js"
+import { applyBrackets      } from "./brackets.js"
+import { applyOperatorSplit } from "./operatorSplit.js"
+import { applyA1            } from "./A1.js"
+import { applyNumber        } from "./number.js"
+import { applyVariables     } from "./variable.js"
+import { killUnparsed       } from "./killUnparsed.js"
+import { applyFunctionCalls } from "./functionCall.js"
+import { applyFunctions     } from "./function.js"
+import { applyInverse       } from "./inverse.js"
 
 /**
  * Parse a function
@@ -17,9 +22,17 @@ export function functionParse(code) {
         toChar: code.length - 1
     }]
     const containers = [
-        "round bracket",
-        "square bracket",
-        "curly bracket"
+        "round bracket",        //for function argument or operation priority
+        "square bracket",       //for index
+        "curly bracket",        //for function declaration
+
+        "function call",        //name + arguments
+        "function reference",   //name (can be dynamic)
+        "function arguments",   //arguments
+
+        "function declaration", //header + body
+        //"function header",    //header (for arguments, is static, so not a container)
+        "function body"         //body
     ]
 
     let error = null
@@ -34,7 +47,7 @@ export function functionParse(code) {
         tree = mapToken(tree, containers, applyBrackets, errorHandler)
         if (error) break exitParsing
 
-        // parse brackets
+        // parse operator tokens
         tree = mapToken(tree, containers, applyOperatorSplit, errorHandler)
         if (error) break exitParsing
 
@@ -46,7 +59,43 @@ export function functionParse(code) {
         tree = mapToken(tree, containers, applyNumber, errorHandler)
         if (error) break exitParsing
 
-        // TODO: next parsers to add
+        // parse variables
+        tree = mapToken(tree, containers, applyVariables, errorHandler)
+        if (error) break exitParsing
+
+        // error on unparsed tokens
+        tree = mapToken(tree, containers, killUnparsed, errorHandler)
+        if (error) break exitParsing
+
+        // parse function
+        tree = mapToken(tree, containers, null, errorHandler, applyFunctions)
+        if (error) break exitParsing
+
+        // parse function call
+        tree = mapToken(tree, containers, null, errorHandler, applyFunctionCalls)
+        if (error) break exitParsing
+
+        // TODO: parse binary inversion (!value)
+        tree = mapToken(tree, containers, null, errorHandler, applyInverse)
+        if (error) break exitParsing
+
+        // TODO: parse pourcentage (value%)
+
+        // TODO: parse multiplication and division (*, /)
+
+        // TODO: parse addition, substraction and concatenation (+, -, &)
+
+        // TODO: parse difference operator (<, >, <=, >=, =, <>, !=)
+
+        // TODO: parse AND and OR (&& and ||)
+
+        // TODO: parse conditional expression (value ? value : value)
+
+        // TODO: parse range (A1 : A1)
+
+        // TODO: kill argument separator ";"
+
+        // TODO: remove unused brackets
     }
 
     return {
@@ -136,7 +185,7 @@ function mapToken(root, containers, func, errorHandler, finaliser) {
             indexList.push(0)
             actual = setActualFromIndexList(root, indexList)
         } else if (element.type == "raw") {
-            func(newActual, element, errorHandler, Array.from(indexList))
+            func?.(newActual, element, errorHandler, Array.from(indexList))
             if (errorHandler()) return
             indexList[depth()]++
         } else {
@@ -153,5 +202,5 @@ function mapToken(root, containers, func, errorHandler, finaliser) {
 
 console.log(
 functionParse(
-`POW({1+4 & "test" &A1}[])`
+`POW((hi; t){1+4 & "test" &A1}; 1+4 & "test" &A1)`
 ))

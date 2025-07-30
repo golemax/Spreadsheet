@@ -1,5 +1,5 @@
 export async function animationLoop() {
-    const util = await import("./util.js")
+    const util = await import("./common/util.js")
 
     /** @type {ClientSheet} */
     let clientSheet

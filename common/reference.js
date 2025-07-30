@@ -19,7 +19,7 @@
 /**
  * Function representation
  * @typedef {Object} SheetFunction
- * @property {boolean} error - is an error
+ * @property {boolean} error - have a parsing error
  * @property {(FunctionExpression|FunctionParseError)} def - parsed expression or error details
  */
 
@@ -39,6 +39,7 @@
  * @typedef {Object} Cell
  * @property {String} value - Input of the cell
  * @property {SheetFunction} function - Associated function (or null)
+ * @property {String} visibleValue - result of function or value of cell
  * @property {CellProperty} property - Property of the cell (or null for )
  */
 
@@ -152,7 +153,10 @@
  * Client sheet representation
  * @typedef {Object} ClientSheet
  * @property {Sheet} sheet - Sheet
+ * @property {String} token - Client token for server identifying
+ * @property {WebSocket} server - Linked server
  * @property {ClientState} state - Client state
+ * @property {SheetRange[]} otherSelections - Selection of other clients
  * @property {HTMLDivElement} element - Linked HTML element
  * @property {CanvasRenderingContext2D} context - 2D Drawing context
  */

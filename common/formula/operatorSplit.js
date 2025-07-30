@@ -7,16 +7,14 @@ export function applyOperatorSplit(root, element, errorHandler, path) {
         "/",
         "|",
         "&",
-        "#",
         "!",
         ";",
         "%",
         ">",
         "<",
         ":",
-        "^",
-        "~",
-        "!"
+        "!",
+        "?",
     ]
 
     const separator = [
