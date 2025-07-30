@@ -43,7 +43,9 @@ const util = {
     createToken: (length) =>
         [...Array(length)].map(() =>
         Math.floor(Math.random()*36).toString(36))
-        .join("").toUpperCase()
+        .join("").toUpperCase(),
+
+    updateSheet: (sheetID) => {}
 }
 
 export function parse(ws, data, isBinary, url, printHeader, address, saveRoot) {
@@ -80,17 +82,18 @@ export function parse(ws, data, isBinary, url, printHeader, address, saveRoot) {
 
     // Parse request's action
     const action = request.action
-    if (!util.stringElementAssert(printErrorHeader, ws, action)) return
+    if (!util.stringElementAssert(printErrorHeader, ws, action, "action")) return
 
-    // Give a token if requested (every others request require connection)
-    if (action === "connect") {
-        const token = connect(args)
-        return
+    // Non-applicant requests
+    switch (action) {
+        case "connect":
+            connect(args)
+            return
     }
 
     // Parse request's token
     const token = request.token
-    if (!util.stringElementAssert(printErrorHeader, ws, token)) return
+    if (!util.stringElementAssert(printErrorHeader, ws, token, "token")) return
     if (!util.validUID(printErrorHeader, ws, token, connectionTokenLength, "token")) return
     if (!Object.keys(connections).includes(token)) {
         console.log(printErrorHeader + "Refused request")
@@ -106,13 +109,15 @@ export function parse(ws, data, isBinary, url, printHeader, address, saveRoot) {
     
     printHeader += "[client: " + token + "] "
 
-    // Create a sheet requested (every others request require existing sheet)
-    if (action == "createSheet") {
-        createSheet(args)
+    // Token applicant requests
+    switch (action) {
+        case "createSheet":
+            createSheet(args)
+            return
     }
 
     const sheetID = request.sheetID
-    if (!util.stringElementAssert(printErrorHeader, ws, sheetID)) return
+    if (!util.stringElementAssert(printErrorHeader, ws, sheetID, "sheetID")) return
     if (!util.validUID(printErrorHeader, ws, sheetID, sheetTokenLength, "sheetID")) return
     const savePath = path.resolve(saveRoot, sheetID + ".json")
     args["savePath"] = savePath
@@ -138,16 +143,17 @@ export function parse(ws, data, isBinary, url, printHeader, address, saveRoot) {
 
     printHeader += "[sheet: " + sheetID + "] "
 
-    // Run actions with client token
+    // Token and sheet applicant requests
     switch (action) {
         case "join":
             join(args)
-            break
+            return
         case "leave":
             leave(args)
-            break
-        default:
-            console.log(printErrorHeader + "Invalid request")
-            ws.send(JSON.stringify({error: "Unknow action"}))
+            return
     }
+    
+    // Request unknow
+    console.log(printErrorHeader + "Invalid request")
+    ws.send(JSON.stringify({error: "Unknow action"}))
 }

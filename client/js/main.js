@@ -40,15 +40,30 @@
         }
 
         const ws = await promiseConnectWebsocket(window.location.href)
-        window.addEventListener("beforeunload", () => new WebSocket().close())
-        const token = (await promiseRespondWebsocket(ws, {action: "connect"})).token
-        const sheetConnectionInit = await promiseRespondWebsocket(ws, {
-            action: "createSheet",
-            token: token
-        })
+            window.addEventListener("beforeunload", () => new WebSocket().close())
+            const token = (await promiseRespondWebsocket(ws, {action: "connect"})).token
+        if (window.location.pathname == "/") {
+            const sheetConnection = await promiseRespondWebsocket(ws, {
+                action: "createSheet",
+                token: token
+            })
+            const sheetID = sheetConnection.sheetID
+            clientSheet.sheet = sheetConnection.sheet
+            history.replaceState(null, "", window.location.href + sheetID)
+        } else {
+            const sheetID = /^\/([A-Z0-9]+)$/.exec(window.location.pathname)?.[1]
+            const sheetJoin = await promiseRespondWebsocket(ws, {
+                action: "join",
+                sheetID: sheetID,
+                token: token
+            })
+            if (sheetJoin.valid) {
+                clientSheet.sheet = sheetJoin.sheet
+            } else {
+                window.location.replace("error.html")
+            }
+        }
 
-        const sheetID = sheetConnectionInit.sheetID
-        clientSheet.sheet = sheetConnectionInit.sheet
 
         control.initControl(clientSheet)
         
