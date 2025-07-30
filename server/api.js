@@ -1,4 +1,5 @@
 const path = await import("node:path")
+const fs = await import("node:fs")
 
 const {connect, connectionTokenLength} = await import("./requests/connect.js")
 const {join} = await import("./requests/join.js")
@@ -9,12 +10,17 @@ const connections = {}
 const sheets = {}
 
 const util = {
-    stringElementAssert: (printErrorHeader, ws, element, elementName) => {
+    existElementAssert: (printErrorHeader, ws, element, elementName) => {
         if (element === undefined) {
             console.log(printErrorHeader + "Invalid request")
             ws.send(JSON.stringify({error: "No given " + elementName}))
             return false
         }
+        return true
+    },
+
+    stringElementAssert: (printErrorHeader, ws, element, elementName) => {
+        if (!util.existElementAssert(printErrorHeader, ws, element, elementName)) return false
 
         if (typeof(element) !== "string") {
             console.log(printErrorHeader + "Invalid request")
@@ -22,6 +28,18 @@ const util = {
             return false
         }
         return true
+    },
+
+    intElementAssert: (printErrorHeader, ws, element, elementName) => {
+        if (!util.stringElementAssert(printErrorHeader, ws, element, elementName)) return false
+
+        let res = undefined
+        try {
+            res = parseInt(element)
+            return true
+        } catch(_) {
+            return false
+        }
     },
     
     validUID: (printErrorHeader, ws, uid, size, elementName) => {
