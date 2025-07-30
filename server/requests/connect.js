@@ -1,18 +1,17 @@
-export const connectionTokenLenght = 16
+export const connectionTokenLength = 16
 
-export function connect(
+export function connect({
     ws, 
-    url, 
     util,
     request, 
-    sheetID, 
     address, 
     printHeader, 
-    connections)
-{
-    let token = util.createToken(connectionTokenLenght)
+    connections,
+    printErrorHeader
+}) {
+    let token = util.createToken(connectionTokenLength)
     while (Object.keys(connections).includes(token))
-        token = util.createToken(connectionTokenLenght)
+        token = util.createToken(connectionTokenLength)
     connections[token] = {
         address: address,
         sheets: []

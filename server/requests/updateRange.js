@@ -1,14 +1,16 @@
-export function leave(
+export function leave({
     ws, 
-    url, 
     util,
     token,
+    sheet,
+    client,
     sheets, 
     request, 
     sheetID, 
     address, 
     savePath, 
     printHeader, 
-    connections)
-{
+    connections,
+    printErrorHeader
+}) {
 }

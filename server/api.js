@@ -1,36 +1,36 @@
 const path = await import("node:path")
 
-const {connect, connectionTokenLenght} = await import("./requests/connect.js")
+const {connect, connectionTokenLength} = await import("./requests/connect.js")
 const {join} = await import("./requests/join.js")
 const {leave} = await import("./requests/leave.js")
-const {createSheet} = await import("./requests/createSheet.js")
+const {createSheet, sheetTokenLength} = await import("./requests/createSheet.js")
 
 const connections = {}
 const sheets = {}
 
 const util = {
-    stringElementAssert: (element, elementName) => {
+    stringElementAssert: (printErrorHeader, ws, element, elementName) => {
         if (element === undefined) {
-            console.log(printHeader + "Invalid request")
+            console.log(printErrorHeader + "Invalid request")
             ws.send(JSON.stringify({error: "No given " + elementName}))
             return false
         }
 
         if (typeof(element) !== "string") {
-            console.log(printHeader + "Invalid request")
+            console.log(printErrorHeader + "Invalid request")
             ws.send(JSON.stringify({error: elementName + " need to be a string"}))
             return false
         }
         return true
     },
     
-    validUID: (uid, lenght, elementName) => {
-        if (uid.lenght != lenght || ![...uid].every(v => {
+    validUID: (printErrorHeader, ws, uid, size, elementName) => {
+        if (uid.length != size || ![...uid].every(v => {
             const code = v.codePointAt(0)
             return (code >= 48 && code <= 57) || // Uppercases alphabet
                 (code >= 65 && code <= 90) // Number
         })) {
-            console.log(printHeader + "Invalid request")
+            console.log(printErrorHeader + "Invalid request")
             ws.send(JSON.stringify({
                 valid: false,
                 description: "Invalid " + elementName
@@ -47,10 +47,22 @@ const util = {
 }
 
 export function parse(ws, data, isBinary, url, printHeader, address, saveRoot) {
+    const printErrorHeader = printHeader
+    
+    const args = {
+        ws: ws, 
+        util: util,
+        sheets: sheets,
+        address: address, 
+        saveRoot: saveRoot,
+        connections: connections,
+        printHeader: printHeader, 
+        printErrorHeader: printErrorHeader
+    }
 
     // require text request
     if (isBinary) {
-        console.log(printHeader + "Invalid request")
+        console.log(printErrorHeader + "Invalid request")
         ws.send(JSON.stringify({error: "JSON Object required"}))
         return
     }
@@ -60,72 +72,82 @@ export function parse(ws, data, isBinary, url, printHeader, address, saveRoot) {
     try {
         request = JSON.parse(data.toString())
     } catch (e) {
-        console.log(printHeader + "Invalid request")
+        console.log(printErrorHeader + "Invalid request")
         ws.send(JSON.stringify({error: e.message}))
         return
     }
+    args["request"] = request
 
     // Parse request's action
     const action = request.action
-    if (!stringElementAssert(action)) return
+    if (!util.stringElementAssert(printErrorHeader, ws, action)) return
 
     // Give a token if requested (every others request require connection)
     if (action === "connect") {
-        const token = connect(
-            ws, 
-            url, 
-            util,
-            request, 
-            sheetID, 
-            address, 
-            printHeader, 
-            connections)
+        const token = connect(args)
         return
     }
 
     // Parse request's token
     const token = request.token
-    if (!stringElementAssert(token)) return
-    if (!validUID(token, connectionTokenLenght, "token"))
-
+    if (!util.stringElementAssert(printErrorHeader, ws, token)) return
+    if (!util.validUID(printErrorHeader, ws, token, connectionTokenLength, "token")) return
     if (!Object.keys(connections).includes(token)) {
-        console.log(printHeader + "Invalid request")
+        console.log(printErrorHeader + "Refused request")
         ws.send(JSON.stringify({
             valid: false,
             description: "Invalid token"
         }))
         return
     }
-
+    const client = connections[token]
+    args["token"] = token
+    args["client"] = client
+    
     printHeader += "[client: " + token + "] "
 
-    // Run actions with client token
-    let sheetID = request.sheetID
+    // Create a sheet requested (every others request require existing sheet)
+    if (action == "createSheet") {
+        createSheet(args)
+    }
+
+    const sheetID = request.sheetID
+    if (!util.stringElementAssert(printErrorHeader, ws, sheetID)) return
+    if (!util.validUID(printErrorHeader, ws, sheetID, sheetTokenLength, "sheetID")) return
     const savePath = path.resolve(saveRoot, sheetID + ".json")
-    const args = [
-        ws, 
-        url, 
-        util,
-        token,
-        sheets, 
-        request, 
-        sheetID, 
-        address, 
-        savePath, 
-        printHeader, 
-        connections
-    ]
+    args["savePath"] = savePath
+    if (!Object.keys(sheets).includes(sheetID)) {
+        if (fs.existsSync(savePath)) {
+            // Load if exist in saves but not loaded
+            sheets[sheetID] = {
+                connected: [],
+                sheetData: JSON.parse(fs.readFileSync(savePath))
+            }
+        } else {
+            console.log(printErrorHeader + "Refused request")
+            ws.send(JSON.stringify({
+                valid: false,
+                description: "Unexisting sheet"
+            }))
+            return
+        }
+    }
+    const sheet = sheets[sheetID]
+    args["sheetID"] = sheetID
+    args["sheet"] = sheet
+
+    printHeader += "[sheet: " + sheetID + "] "
+
+    // Run actions with client token
     switch (action) {
         case "join":
-            join(...args)
+            join(args)
             break
         case "leave":
-            leave(...args)
-            break
-        case "createSheet":
-            createSheet(...args)
+            leave(args)
             break
         default:
+            console.log(printErrorHeader + "Invalid request")
             ws.send(JSON.stringify({error: "Unknow action"}))
     }
 }

@@ -1,39 +1,29 @@
 const fs = await import("node:fs")
 const sheetJS = await import("../../common/sheet.js")
 
-export const sheetTokenLenght = 8
+export const sheetTokenLength = 8
 
-export function createSheet(
+export function createSheet({
     ws, 
-    url, 
     util,
     token,
+    client,
     sheets, 
     request, 
-    sheetID, 
-    address, 
-    savePath, 
+    saveRoot, 
     printHeader, 
-    connections)
-{
-    sheetID = util.createToken(sheetTokenLenght)
-    while (Object.keys(sheets).includes(sheetID))
-        sheetID = util.createToken(sheetTokenLenght)
-
-    if (fs.existsSync(savePath)) {
-        console.log(printHeader + "Invalid request")
-        ws.send(JSON.stringify({
-            valid: false,
-            description: "This sheet already't exist"
-        }))
-        return
-    }
+    connections,
+    printErrorHeader
+}) {
+    let sheetID = util.createToken(sheetTokenLength)
+    while (Object.keys(sheets).includes(sheetID) && fs.readdirSync(saveRoot).includes(sheetID + ".json"))
+        sheetID = util.createToken(sheetTokenLength)
 
     sheets[sheetID] = {
         connected: [token],
         sheetData: sheetJS.newSheet(true)
     }
-    connections[token].sheets.push({
+    client.sheets.push({
         sheet: sheetID,
         selections: []
     })

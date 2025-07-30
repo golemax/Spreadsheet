@@ -42,14 +42,16 @@ function answerFile(root, request, response) {
 
     // fix redirections
     let url = "." + request.url
-    url = url.replace(/\.\/js\/common\//, "../common/")
+    url = url.replace(/^\.\/js\/common\//, "../common/")
+    url = url.replace(/^\.\/[A-Z0-9]+$/, "./index.html")
 
     // get absolute path
     const filePath = path.resolve(root, url)
 
     // get file content
+    let content
     try {
-        const content = fs.readFileSync(filePath)
+        content = fs.readFileSync(filePath)
     } catch(_) {
         console.log("client " + request.socket.remoteAddress + "\trequested " + request.url + " (not exist)");
         response.setHeader("Content-Type", "text/plain");
@@ -85,16 +87,16 @@ function answerFile(root, request, response) {
     response.end(content);
 }
 
-// Manage Websocket connection
-function answerApiConnection(ws, request) {
+// Manage Websocket Connection
+function answerApi(ws, request, saveRoot) {
     console.log("client " + request.socket.remoteAddress + "\topen websocket connection at " + request.url);
-    ws.on('message', answerApi)
+    ws.on('message', (data, isBinary) => answerApiRequest(data, isBinary, ws, request, saveRoot))
 
     ws.on('close', () => {console.log("client " + request.socket.remoteAddress + "\tclose websocket connection from " + request.url)})
 }
 
 // Answer Websocket request
-function answerApi(data, isBinary) {
+function answerApiRequest(data, isBinary, ws, request, saveRoot) {
     api.parse(
         ws, 
         data, 
@@ -129,9 +131,9 @@ function answerApi(data, isBinary) {
     const saveRoot = path.join(rootDir, savesFolder)
 
     // init server
-    const server = http.createServer((req, res) => answer(root, req, res))
+    const server = http.createServer((req, res) => answerFile(root, req, res))
     const wsServer = new ws.WebSocketServer({server: server})
-    wsServer.on('connection', answerApiConnection)
+    wsServer.on('connection', (ws, request) => answerApi(ws, request, saveRoot))
     
     // run server
     server.listen(port, () => console.log('Server running'));
