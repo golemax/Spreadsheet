@@ -40,7 +40,7 @@
  * @property {String} value - Input of the cell
  * @property {SheetFunction} function - Associated function (or null)
  * @property {String} visibleValue - result of function or value of cell
- * @property {CellProperty} property - Property of the cell (or null for )
+ * @property {CellProperty} property - Property of the cell (or null)
  */
 
 /**
@@ -48,8 +48,8 @@
  * @typedef {Object} SheetRange
  * @property {Number} startColumn - Where range's column start
  * @property {Number} startRow - Where range's row start
- * @property {Number} endColumn - Where range's column end (or null for maximum)
- * @property {Number} endRow - Where range's row end (or null for maximum)
+ * @property {Number} endColumn - Where range's column end (or zero for maximum)
+ * @property {Number} endRow - Where range's row end (or zero for maximum)
  */
 
 /**
@@ -147,6 +147,9 @@
  * @property {Number} firstVisibleRow - first visible row in viewport (1 based)
  * @property {Number} firstVisibleColumnOffset - pixels between start of first visible column and his visible part
  * @property {Number} firstVisibleRowOffset - pixels between start of first visible row and his visible part
+ * 
+ * @property {Number} addColumnButtonOffset - pixels between start of the add column button and his visible part
+ * @property {Number} addRowButtonOffset - pixels between start of the add row and his visible part
  */
 
 /**
@@ -154,8 +157,10 @@
  * @typedef {Object} ClientSheet
  * @property {Sheet} sheet - Sheet
  * @property {String} token - Client token for server identifying
+ * @property {String} sheetID - Sheet identifier of server
  * @property {WebSocket} server - Linked server
  * @property {ClientState} state - Client state
+ * @property {String} lastSelectionHash - Hash of last selection before push to server
  * @property {SheetRange[]} otherSelections - Selection of other clients
  * @property {HTMLDivElement} element - Linked HTML element
  * @property {CanvasRenderingContext2D} context - 2D Drawing context

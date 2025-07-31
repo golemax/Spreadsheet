@@ -92,7 +92,10 @@ function answerApi(ws, request, saveRoot) {
     console.log("client " + request.socket.remoteAddress + "\topen websocket connection at " + request.url);
     ws.on('message', (data, isBinary) => answerApiRequest(data, isBinary, ws, request, saveRoot))
 
-    ws.on('close', () => {console.log("client " + request.socket.remoteAddress + "\tclose websocket connection from " + request.url)})
+    ws.on('close', () => {
+        console.log("client " + request.socket.remoteAddress + "\tclose websocket connection from " + request.url)
+        api.disconnect(ws, saveRoot)
+    })
 }
 
 // Answer Websocket request
@@ -103,7 +106,6 @@ function answerApiRequest(data, isBinary, ws, request, saveRoot) {
         isBinary, 
         request.url, 
         "client " + request.socket.remoteAddress + "\tAPI> ", 
-        request.socket.remoteAddress, 
         saveRoot)
 }
 

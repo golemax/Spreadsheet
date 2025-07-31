@@ -1,4 +1,5 @@
 const util = await import("./common/util.js")
+const clientUtil = await import("./util.js")
 const manageSheet = await import("./common/sheetUtil.js")
 
 /**
@@ -65,6 +66,16 @@ export function initControl(clientSheet) {
         else
             inputArea.value = ""
         
+        const selectionHash = JSON.stringify(clientSheet.state.selection)
+        if (selectionHash != clientSheet.lastSelectionHash) {
+            clientSheet.server.send(JSON.stringify({
+                action: "updateSelected",
+                selections: clientSheet.state.selection,
+                sheetID: clientSheet.sheetID,
+                token: clientSheet.token
+            }))
+            clientSheet.lastSelectionHash = selectionHash
+        }
         cellSelector.value = util.prettifySelection(clientSheet.state.selection)
     }
 
@@ -220,6 +231,14 @@ export function initControl(clientSheet) {
                     if (clientSheet.sheet.rows < actualCellPos[1])
                         manageSheet.addRows(clientSheet.sheet, actualCellPos[1] - clientSheet.sheet.rows)
                     clientSheet.sheet.values[actualCellPos[0]-1][actualCellPos[1]-1].value = inputArea.value
+                    clientSheet.server.send(JSON.stringify({
+                        action: "updateCellValue",
+                        row: actualCellPos[1],
+                        column: actualCellPos[0],
+                        value: inputArea.value,
+                        sheetID: clientSheet.sheetID,
+                        token: clientSheet.token
+                    }))
                     
                     state.selection = [{
                         startColumn: actualCellPos[0],
@@ -248,6 +267,14 @@ export function initControl(clientSheet) {
                 if (clientSheet.sheet.rows < actualCellPos[1])
                     manageSheet.addRows(clientSheet.sheet, actualCellPos[1] - clientSheet.sheet.rows)
                 clientSheet.sheet.values[actualCellPos[0]-1][actualCellPos[1]-1].value = inputArea.value
+                clientSheet.server.send(JSON.stringify({
+                    action: "updateCellValue",
+                    row: actualCellPos[1],
+                    column: actualCellPos[0],
+                    value: inputArea.value,
+                    sheetID: clientSheet.sheetID,
+                    token: clientSheet.token
+                }))
                 
                 state.selection = [{
                     startColumn: actualCellPos[0],
@@ -272,6 +299,14 @@ export function initControl(clientSheet) {
                             if ((col <= clientSheet.sheet.columns) && (row <= clientSheet.sheet.rows)) {
                                 clientSheet.sheet.values[col-1][row-1].value = ""
                                 clientSheet.sheet.values[col-1][row-1].function = null
+                                clientSheet.server.send(JSON.stringify({
+                                    action: "updateCellValue",
+                                    row: row,
+                                    column: col,
+                                    value: "",
+                                    sheetID: clientSheet.sheetID,
+                                    token: clientSheet.token
+                                }))
                                 updateInputs()
                             }
             }
@@ -350,7 +385,7 @@ export function initControl(clientSheet) {
 
     function mouseClickEvent(event) {
         if (event.button == 0 || event.button == 2) {
-            const cellPos = util.getCellAtPos(clientSheet, event.x, event.y)
+            const cellPos = clientUtil.getCellAtPos(clientSheet, event.x, event.y)
             if (cellPos != null) {
                 if (event.shiftKey) {
                     completeSelection(cellPos[0], cellPos[1])
@@ -386,7 +421,7 @@ export function initControl(clientSheet) {
     }
 
     function updateSelectionFromMouseEvent() {
-        const cellPos = util.getCellAtPos(clientSheet, event.x, event.y)
+        const cellPos = clientUtil.getCellAtPos(clientSheet, event.x, event.y)
         if (cellPos != null)
             completeSelection(cellPos[0], cellPos[1])
     }

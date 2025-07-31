@@ -13,7 +13,7 @@ export function connect({
     while (Object.keys(connections).includes(token))
         token = util.createToken(connectionTokenLength)
     connections[token] = {
-        address: address,
+        websocket: ws,
         sheets: []
     }
     console.log(printHeader + "New token: " + token)

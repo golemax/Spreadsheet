@@ -6,7 +6,8 @@ export function join({
     sheet,
     client,
     sheetID, 
-    printHeader
+    printHeader,
+    connections
 }) {
     if (client.sheets.filter(sh => sh.sheetID == sheetID).length != 0) {
         console.log(printHeader + "Refused request")
@@ -23,10 +24,16 @@ export function join({
     })
     sheet.connected.push(token)
 
-    console.log(printHeader + "[sheet: " + sheetID + "] Connecting")
+    console.log(printHeader + "Connecting")
+    const selectionList = []
+    for (const connectedToken of sheet.connected)
+        if (connectedToken != token)
+            connections[connectedToken].sheets.filter(sh => sh.sheetID == sheetID)[0]
+                .selections.forEach(element => selectionList.push(element))
     ws.send(JSON.stringify({
         valid: true,
-        sheet: sheet.sheetData
+        sheet: sheet.sheetData,
+        selections: selectionList
     }))
 }
 

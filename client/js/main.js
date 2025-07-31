@@ -2,6 +2,7 @@
     const sheet = await import("./common/sheet.js")
     const draw = await import("./draw.js")
     const control = await import("./control.js")
+    const distant = await import("./distant.js")
 
     /**
      * Create new global table linked to a div
@@ -39,33 +40,51 @@
             firstVisibleRowOffset: 0
         }
 
-        const ws = await promiseConnectWebsocket(window.location.href)
-            window.addEventListener("beforeunload", () => new WebSocket().close())
-            const token = (await promiseRespondWebsocket(ws, {action: "connect"})).token
+        clientSheet.server = await promiseConnectWebsocket(window.location.href)
+        clientSheet.token = (await promiseRespondWebsocket(clientSheet.server, {action: "connect"})).token
+
         if (window.location.pathname == "/") {
-            const sheetConnection = await promiseRespondWebsocket(ws, {
+            const sheetConnection = await promiseRespondWebsocket(clientSheet.server, {
                 action: "createSheet",
-                token: token
+                token: clientSheet.token,
+                infinite: true
             })
-            const sheetID = sheetConnection.sheetID
+            clientSheet.sheetID = sheetConnection.sheetID
             clientSheet.sheet = sheetConnection.sheet
-            history.replaceState(null, "", window.location.href + sheetID)
+            history.replaceState(null, "", window.location.href + clientSheet.sheetID)
         } else {
-            const sheetID = /^\/([A-Z0-9]+)$/.exec(window.location.pathname)?.[1]
-            const sheetJoin = await promiseRespondWebsocket(ws, {
+            clientSheet.sheetID = /^\/([A-Z0-9]+)$/.exec(window.location.pathname)?.[1]
+            const sheetJoin = await promiseRespondWebsocket(clientSheet.server, {
                 action: "join",
-                sheetID: sheetID,
-                token: token
+                sheetID: clientSheet.sheetID,
+                token: clientSheet.token
             })
             if (sheetJoin.valid) {
                 clientSheet.sheet = sheetJoin.sheet
+                clientSheet.otherSelections = sheetJoin.selections
             } else {
                 window.location.replace("error.html")
             }
+        
+        
         }
+        
+        clientSheet.server.send(JSON.stringify({
+            action: "updateSelected",
+            selections: clientSheet.state.selection,
+            sheetID: clientSheet.sheetID,
+            token: clientSheet.token
+        }))
+        clientSheet.lastSelectionHash = JSON.stringify(clientSheet.state.selection)
 
+        window.addEventListener("beforeunload", () => clientSheet.server.send(JSON.stringify({
+            action: "leave",
+            token: clientSheet.token,
+            sheetID: clientSheet.sheetID
+        })))
 
         control.initControl(clientSheet)
+        distant.catcher(clientSheet)
         
         globalThis.spreadsheet ??= []
         globalThis.spreadsheet.push(clientSheet)

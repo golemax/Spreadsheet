@@ -28,7 +28,7 @@ export async function animationLoop() {
         const rowHeaderClip = new Path2D()
         rowHeaderClip.rect(0, sheet.columnsHeight, sheet.rowsWidth, canvas.height - sheet.columnsHeight)
         ctx.clip(rowHeaderClip)
-        for (let row = 1; sheet.infinite ? ((offset - state.yOffset) < canvas.height) : (row <= sheet.rows); row++) {
+        for (let row = 1; ((offset - state.yOffset) < canvas.height) && (sheet.infinite || (row <= sheet.rows)); row++) {
             ctx.save()
             const position = [0, offset - state.yOffset, sheet.rowsWidth, sheet.defaultRowsHeight]
             if ((position[1] <= sheet.columnsHeight) && ((position[1] + position[3]) > sheet.columnsHeight)) {
@@ -50,6 +50,25 @@ export async function animationLoop() {
             ctx.clip()
             ctx.fillText(row, sheet.rowsWidth/2, offset + sheet.defaultRowsHeight/2 - state.yOffset)
             offset += sheet.defaultRowsHeight
+            ctx.restore()
+        }
+        if (!sheet.infinite) {
+            ctx.save()
+            const addRowButtonPosition = [0, offset - state.yOffset, sheet.rowsWidth, sheet.columnsHeight/4*3]
+            ctx.fillStyle = headProp.backgroundColor
+            const addRowButtonClip = new Path2D()
+            addRowButtonClip.rect(...addRowButtonPosition)
+            ctx.clip(addRowButtonClip)
+            ctx.fillRect(...addRowButtonPosition)
+            ctx.strokeRect(...addRowButtonPosition)
+            ctx.font =
+                (headProp.bold ? "bold " : "") +
+                headProp.fontSize + "px " +
+                headProp.font
+            ctx.fillStyle = headProp.textColor
+            ctx.textBaseline = "middle"
+            ctx.textAlign = "center";
+            ctx.fillText("+", sheet.rowsWidth/2, offset + sheet.columnsHeight/8*3 - state.yOffset)
             ctx.restore()
         }
         ctx.restore()
@@ -83,6 +102,25 @@ export async function animationLoop() {
             ctx.textAlign = "center";
             ctx.fillText(util.numberToAlphabet(column), offset + sheet.defaultColumnsWidth/2 - state.xOffset, sheet.columnsHeight/2)
             offset += sheet.defaultColumnsWidth
+            ctx.restore()
+        }
+        if (!sheet.infinite) {
+            ctx.save()
+            const addColumnButtonPosition = [offset - state.xOffset, 0, sheet.columnsHeight/4*3, sheet.columnsHeight]
+            ctx.fillStyle = headProp.backgroundColor
+            const addColumnButtonClip = new Path2D()
+            addColumnButtonClip.rect(...addColumnButtonPosition)
+            ctx.clip(addColumnButtonClip)
+            ctx.fillRect(...addColumnButtonPosition)
+            ctx.strokeRect(...addColumnButtonPosition)
+            ctx.font =
+                (headProp.bold ? "bold " : "") +
+                headProp.fontSize + "px " +
+                headProp.font
+            ctx.fillStyle = headProp.textColor
+            ctx.textBaseline = "middle"
+            ctx.textAlign = "center";
+            ctx.fillText("+", offset + sheet.columnsHeight/8*3- state.xOffset, sheet.columnsHeight/2)
             ctx.restore()
         }
         ctx.restore()
@@ -170,6 +208,43 @@ export async function animationLoop() {
             ctx.strokeRect(...position)
         }
         ctx.restore()
+
+        // others selections
+        ctx.save()
+        ctx.fillStyle = "red"
+        ctx.lineWidth = 2.25
+        for (const range of clientSheet.otherSelections) {
+            rowOffset = sheet.columnsHeight
+            for (let row = 1; row < range.startRow; row++)
+                rowOffset += sheet.defaultRowsHeight
+            columnOffset = sheet.rowsWidth
+            for (let column = 1; column < range.startColumn; column++)
+                columnOffset += sheet.defaultColumnsWidth
+            let endRowOffset = 0
+            if (range.endRow == 0 && sheet.infinite)
+                endRowOffset = (canvas.height - rowOffset)
+            else if (range.endRow == 0)
+                for (let row = range.startRow; row <= sheet.rows; row++)
+                    endRowOffset += sheet.defaultRowsHeight
+            else
+                for (let row = range.startRow; row <= range.endRow; row++)
+                    endRowOffset += sheet.defaultRowsHeight
+            let endColumnOffset = 0
+            if (range.endColumn == 0 && sheet.infinite)
+                endColumnOffset = (canvas.width - columnOffset)
+            else if (range.endColumn == 0)
+                for (let column = range.startColumn; column <= sheet.columns; column++)
+                    endColumnOffset += sheet.defaultColumnsWidth
+            else
+                for (let column = range.startColumn; column <= range.endColumn; column++)
+                    endColumnOffset += sheet.defaultColumnsWidth
+            
+            const position = [columnOffset - state.xOffset, rowOffset - state.yOffset, endColumnOffset, endRowOffset]
+            ctx.globalAlpha = 0.10
+            ctx.fillRect(...position)
+            ctx.globalAlpha = 1
+            ctx.strokeRect(...position)
+        }
         ctx.restore()
     }
     requestAnimationFrame(animationLoop)

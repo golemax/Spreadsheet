@@ -15,16 +15,19 @@ export function createSheet({
     connections,
     printErrorHeader
 }) {
+    const infinite = request.infinite
+    if (!util.booleanElementAssert(printErrorHeader, ws, infinite, "infinite")) return
+
     let sheetID = util.createToken(sheetTokenLength)
     while (Object.keys(sheets).includes(sheetID) && fs.readdirSync(saveRoot).includes(sheetID + ".json"))
         sheetID = util.createToken(sheetTokenLength)
 
     sheets[sheetID] = {
         connected: [token],
-        sheetData: sheetJS.newSheet(true)
+        sheetData: sheetJS.newSheet(infinite)
     }
     client.sheets.push({
-        sheet: sheetID,
+        sheetID: sheetID,
         selections: []
     })
 
