@@ -7,6 +7,7 @@ const net = await import("node:net");
 const ws = await import('ws');
 const api = await import('./api.js')
 
+// Get local IP from ifconfig.me (prefer secure)
 async function getIP() {
     let ret = "localhost"
     try {
@@ -21,29 +22,27 @@ async function getIP() {
     return ret
 }
 
-function secureUrl(url) {
-    /*
-        Prepare URL for secure file location
-        All selected patterns change to "/" for correcting URLs
-        (^(?!\/)) => Prevent path than don't start with root "/"
-        ((?<=\/|^)\.\.(?=\/|$)) => Prevent relative path
-        (pattern|(\/))+ => Prevent duplication of file separator "/"
-        */
-    return url.replaceAll(/((^(?!\/))|((?<=\/|^)\.\.(?=\/|$))|(\/))+/g, "/")
+// Prepare URL for secure file location
+function securePath(url, rootFile) {
+    return url
+        .replaceAll(/^(?!\/)/g, "/")              // Be sure the path start with "/" (root)
+        .replaceAll(/#.*$/g, "")                  // Remove fragment
+        .replaceAll(/\?.*$/g, "")                 // Remove query
+        .replaceAll(/[^a-zA-Z0-9\/%_.-]/g, "")    // Remove every unsuported caracters
+        .replaceAll(/(?<=\/)\.\.?(?=\/|$)/g, "")  // Prevent relative paths ("/.." and "/.")
+        .replaceAll(/\/+/g, "/")                  // Prevent duplicate slash
+        .replaceAll(/^\/$/g, "/" + rootFile)      // Set default file as root
+        .replaceAll(/\/$/g, "")                   // Remove last slash (to prevent confusions)
 }
 
 // Answer HTTP request
 function answerFile(root, request, response) {
 
-    request.url = secureUrl(request.url)
-
-    if (request.url.endsWith("/"))
-        request.url += "index.html"; // set index.html as default
+    request.url = secureUrl(request.url, "index.html")
 
     // fix redirections
     let url = "." + request.url
     url = url.replace(/^\.\/js\/common\//, "../common/")
-    url = url.replace(/^\.\/[A-Z0-9]+$/, "./index.html")
 
     // get absolute path
     const filePath = path.resolve(root, url)
